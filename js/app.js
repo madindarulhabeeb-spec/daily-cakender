@@ -90,6 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function initApp() {
   renderPresetsList();
   setupEventListeners();
+  setupBackgroundEvents();
+  setupPasswordEvents();
+  initPasswordSystem();
   autoScalePoster();
   window.addEventListener('resize', autoScalePoster);
 
@@ -476,26 +479,45 @@ async function exportPosterImage() {
   showToast('Generating high-resolution poster image...', 'info');
 
   try {
-    // Save previous transform to restore after export
+    // Remove scaling so html2canvas captures at natural size
     const prevTransform = wrapper.style.transform;
     wrapper.style.transform = 'none';
 
-    // Wait for any pending fonts or layouts
+    // Force poster to be fully visible for capture (no clipping)
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'visible';
+
+    // Wait for fonts to be ready
     await document.fonts.ready;
 
-    // Use html2canvas with scale 2.5 for crisp HD poster
+    // Small delay to let layout settle
+    await new Promise(r => setTimeout(r, 80));
+
+    // Use html2canvas with scale 2.5 for crisp HD poster (2000x2560px)
     const canvas = await html2canvas(poster, {
       scale: 2.5,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#fcfbf7',
       logging: false,
-      scrollX: 0,
-      scrollY: 0
+      width: 800,
+      height: 1024,
+      onclone: (clonedDoc) => {
+        const clonedWrapper = clonedDoc.getElementById('poster-scale-wrapper');
+        if (clonedWrapper) clonedWrapper.style.transform = 'none';
+        const clonedPoster = clonedDoc.getElementById('calendar-poster');
+        if (clonedPoster) {
+          clonedPoster.style.width = '800px';
+          clonedPoster.style.height = '1024px';
+          clonedPoster.style.margin = '0';
+          clonedPoster.style.overflow = 'hidden';
+        }
+      }
     });
 
-    // Restore wrapper scale
+    // Restore original layout
     wrapper.style.transform = prevTransform;
+    document.body.style.overflow = prevOverflow;
 
     // Filename: Darul-Habeeb-Calendar-YYYY-MM-DD.png
     const yyyy = AppState.currentDate.getFullYear();
@@ -514,6 +536,8 @@ async function exportPosterImage() {
     showToast('Poster downloaded successfully!', 'success');
   } catch (err) {
     console.error('Error generating poster image:', err);
+    // Restore on error too
+    wrapper.style.transform = '';
     showToast('Download error. Please try again.', 'error');
   }
 }
@@ -543,7 +567,9 @@ async function sharePosterImage() {
       scale: 2.0,
       useCORS: true,
       backgroundColor: '#fcfbf7',
-      logging: false
+      logging: false,
+      width: 800,
+      height: 1024
     });
 
     wrapper.style.transform = prevTransform;
@@ -659,4 +685,262 @@ function bindInput(id, callback) {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('input', (e) => callback(e.target.value));
+}
+
+/* =============================================================================
+   BACKGROUND IMAGE UPLOAD SYSTEM
+   ============================================================================= */
+
+const BgState = {
+  dataUrl: null,
+  opacity: 100,
+  blur: 0
+};
+
+function setupBackgroundEvents() {
+  const bgLayer = document.getElementById('poster-custom-bg');
+
+  // File upload
+  const fileInput = document.getElementById('input-bg-upload');
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        BgState.dataUrl = evt.target.result;
+        applyBackground();
+        showToast('Background image applied!', 'success');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Opacity slider
+  const opacitySlider = document.getElementById('input-bg-opacity');
+  const opacityVal = document.getElementById('val-bg-opacity');
+  if (opacitySlider) {
+    opacitySlider.addEventListener('input', () => {
+      BgState.opacity = parseInt(opacitySlider.value, 10);
+      if (opacityVal) opacityVal.textContent = BgState.opacity + '%';
+      applyBackground();
+    });
+  }
+
+  // Blur slider
+  const blurSlider = document.getElementById('input-bg-blur');
+  const blurVal = document.getElementById('val-bg-blur');
+  if (blurSlider) {
+    blurSlider.addEventListener('input', () => {
+      BgState.blur = parseInt(blurSlider.value, 10);
+      if (blurVal) blurVal.textContent = BgState.blur + 'px';
+      applyBackground();
+    });
+  }
+
+  // Preset buttons
+  const btnDefault = document.getElementById('btn-bg-default');
+  if (btnDefault) {
+    btnDefault.addEventListener('click', () => {
+      BgState.dataUrl = null;
+      if (fileInput) fileInput.value = '';
+      applyBackground();
+      showToast('Reset to default cream pattern', 'info');
+    });
+  }
+
+  const btnOriginal = document.getElementById('btn-bg-original');
+  if (btnOriginal) {
+    btnOriginal.addEventListener('click', () => {
+      // Use the reference image as background
+      BgState.dataUrl = 'assets/template-reference.jpg';
+      applyBackground();
+      showToast('Original template background applied', 'info');
+    });
+  }
+
+  const btnClear = document.getElementById('btn-bg-clear');
+  if (btnClear) {
+    btnClear.addEventListener('click', () => {
+      BgState.dataUrl = null;
+      if (fileInput) fileInput.value = '';
+      applyBackground();
+      showToast('Background image removed', 'info');
+    });
+  }
+}
+
+function applyBackground() {
+  const bgLayer = document.getElementById('poster-custom-bg');
+  if (!bgLayer) return;
+
+  if (BgState.dataUrl) {
+    bgLayer.style.backgroundImage = `url('${BgState.dataUrl}')`;
+    bgLayer.style.backgroundSize = 'cover';
+    bgLayer.style.backgroundPosition = 'center';
+    bgLayer.style.backgroundRepeat = 'no-repeat';
+    bgLayer.style.opacity = BgState.opacity / 100;
+    bgLayer.style.filter = BgState.blur > 0 ? `blur(${BgState.blur}px)` : '';
+    bgLayer.classList.add('active');
+  } else {
+    bgLayer.style.backgroundImage = '';
+    bgLayer.style.opacity = '';
+    bgLayer.style.filter = '';
+    bgLayer.classList.remove('active');
+  }
+}
+
+/* =============================================================================
+   PASSWORD PROTECTION SYSTEM
+   ============================================================================= */
+
+const PWD_KEY = 'mhs_cal_pwd';
+const LOCK_KEY = 'mhs_cal_locked';
+const DEFAULT_PWD = 'darulhabeeb';
+
+/**
+ * Simple hash using btoa (base64 encoding as obfuscation)
+ * For higher security you can replace with a proper hash
+ */
+function hashPassword(pwd) {
+  return btoa(unescape(encodeURIComponent('mhscal:' + pwd)));
+}
+
+function initPasswordSystem() {
+  // If no password stored yet, set the default
+  if (!localStorage.getItem(PWD_KEY)) {
+    localStorage.setItem(PWD_KEY, hashPassword(DEFAULT_PWD));
+  }
+
+  // Show lock screen if locked or first visit flag
+  const isLocked = localStorage.getItem(LOCK_KEY);
+  const overlay = document.getElementById('lock-screen-overlay');
+  if (overlay) {
+    // Auto-unlock if never locked and password not changed from default
+    if (isLocked === 'true') {
+      overlay.classList.remove('hidden');
+    } else {
+      overlay.classList.add('hidden');
+    }
+  }
+}
+
+function setupPasswordEvents() {
+  const overlay = document.getElementById('lock-screen-overlay');
+  const lockForm = document.getElementById('lock-form');
+  const lockInput = document.getElementById('lock-password-input');
+  const lockError = document.getElementById('lock-error-msg');
+  const btnUnlock = document.getElementById('btn-unlock-app');
+  const btnToggleVis = document.getElementById('btn-toggle-pwd-vis');
+
+  // Toggle password visibility on lock screen
+  if (btnToggleVis && lockInput) {
+    btnToggleVis.addEventListener('click', () => {
+      lockInput.type = lockInput.type === 'password' ? 'text' : 'password';
+    });
+  }
+
+  // Unlock via form submit
+  if (lockForm) {
+    lockForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      attemptUnlock();
+    });
+  }
+  if (btnUnlock) {
+    btnUnlock.addEventListener('click', attemptUnlock);
+  }
+
+  function attemptUnlock() {
+    const input = lockInput ? lockInput.value : '';
+    const stored = localStorage.getItem(PWD_KEY);
+    if (hashPassword(input) === stored) {
+      // Correct password
+      overlay.classList.add('hidden');
+      localStorage.setItem(LOCK_KEY, 'false');
+      if (lockError) lockError.textContent = '';
+      if (lockInput) lockInput.value = '';
+      showToast('Unlocked successfully!', 'success');
+    } else {
+      if (lockError) {
+        lockError.textContent = '❌ Incorrect password. Please try again.';
+        setTimeout(() => { if (lockError) lockError.textContent = ''; }, 3000);
+      }
+      if (lockInput) {
+        lockInput.value = '';
+        lockInput.focus();
+      }
+    }
+  }
+
+  // Header Lock button
+  const btnLockApp = document.getElementById('btn-lock-app');
+  if (btnLockApp) {
+    btnLockApp.addEventListener('click', () => {
+      lockApp();
+    });
+  }
+
+  // Security tab: Lock Now button
+  const btnLockNow = document.getElementById('btn-lock-now');
+  if (btnLockNow) {
+    btnLockNow.addEventListener('click', () => {
+      lockApp();
+    });
+  }
+
+  // Security tab: Change Password button
+  const btnChangePwd = document.getElementById('btn-change-password');
+  if (btnChangePwd) {
+    btnChangePwd.addEventListener('click', () => {
+      const currentInput = document.getElementById('pwd-current');
+      const newInput = document.getElementById('pwd-new');
+      const confirmInput = document.getElementById('pwd-confirm');
+
+      if (!currentInput || !newInput || !confirmInput) return;
+
+      const currentPwd = currentInput.value.trim();
+      const newPwd = newInput.value.trim();
+      const confirmPwd = confirmInput.value.trim();
+
+      const storedHash = localStorage.getItem(PWD_KEY);
+
+      if (hashPassword(currentPwd) !== storedHash) {
+        showToast('❌ Current password is incorrect!', 'error');
+        return;
+      }
+
+      if (newPwd.length < 4) {
+        showToast('❌ New password must be at least 4 characters!', 'error');
+        return;
+      }
+
+      if (newPwd !== confirmPwd) {
+        showToast('❌ New passwords do not match!', 'error');
+        return;
+      }
+
+      // Save new password
+      localStorage.setItem(PWD_KEY, hashPassword(newPwd));
+      currentInput.value = '';
+      newInput.value = '';
+      confirmInput.value = '';
+
+      showToast('✅ Password changed successfully!', 'success');
+    });
+  }
+}
+
+function lockApp() {
+  const overlay = document.getElementById('lock-screen-overlay');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    localStorage.setItem(LOCK_KEY, 'true');
+    // Focus the password input
+    const lockInput = document.getElementById('lock-password-input');
+    if (lockInput) {
+      setTimeout(() => lockInput.focus(), 100);
+    }
+    showToast('Website locked 🔒', 'info');
+  }
 }

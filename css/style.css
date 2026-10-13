@@ -253,9 +253,32 @@ body {
   border-radius: 4px;
   display: flex;
   flex-direction: column;
-  padding: 24px 42px 20px 42px;
+  justify-content: space-between;
+  padding: 28px 42px 30px 42px;
   overflow: hidden;
   user-select: none;
+  box-sizing: border-box;
+}
+
+/* Custom Background Image Layer */
+.poster-custom-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 1;
+  transition: opacity 0.2s, filter 0.2s;
+  display: none;
+}
+
+.poster-custom-bg.active {
+  display: block;
 }
 
 /* Geometric Arabesque Pattern Overlay */
@@ -389,7 +412,6 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  margin-top: 40px;
   position: relative;
   z-index: 2;
 }
@@ -490,18 +512,17 @@ body {
    DAILY INSIGHTS BOX
    ========================================================================== */
 .daily-insights-box {
-  margin-top: 24px;
   border: 1.8px dashed var(--border-dotted);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.75);
   position: relative;
-  padding: 18px 24px 14px 24px;
+  padding: 24px 28px 18px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  min-height: 145px;
+  min-height: 175px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
   z-index: 2;
 }
@@ -592,14 +613,14 @@ body {
    PRAYER TIME SECTION (Kasaragod)
    ========================================================================== */
 .prayer-time-section {
-  margin-top: 22px;
   border: 1.5px solid #84a2ba;
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.45);
   position: relative;
-  padding: 20px 16px 14px 16px;
+  padding: 22px 18px 18px 18px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   z-index: 2;
+  flex-shrink: 0;
 }
 
 /* Two stand feet at bottom of prayer box */
@@ -673,14 +694,14 @@ body {
    POSTER FOOTER
    ========================================================================== */
 .poster-footer {
-  margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding-top: 10px;
+  padding: 4px 0 2px 0;
   position: relative;
   z-index: 2;
+  flex-shrink: 0;
 }
 
 .footer-mhs-logo {
@@ -1129,6 +1150,7 @@ body {
     display: flex;
     width: 100%;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .header-actions .btn {
@@ -1136,5 +1158,178 @@ body {
     padding: 8px 6px;
     font-size: 0.78rem;
     gap: 4px;
+    min-width: 70px;
   }
+}
+
+/* ==========================================================================
+   LOCK SCREEN OVERLAY
+   ========================================================================== */
+.lock-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0a1628 0%, #0e2240 50%, #112244 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.lock-overlay.hidden {
+  display: none;
+}
+
+.lock-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 40px 36px 32px 36px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+.lock-logo-wrapper {
+  width: 80px;
+  height: 80px;
+  background: #fcfbf7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.lock-logo {
+  width: 60px;
+  height: auto;
+  object-fit: contain;
+}
+
+.lock-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f8fafc;
+  text-align: center;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.lock-subtitle {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.lock-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lock-input-group {
+  display: flex;
+  align-items: center;
+  background: #0f172a;
+  border: 1.5px solid #475569;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.lock-input-group:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.lock-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 13px 16px;
+  color: #f8fafc;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.lock-input::placeholder {
+  color: #64748b;
+}
+
+.lock-vis-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #64748b;
+  transition: color 0.15s;
+}
+
+.lock-vis-btn:hover {
+  color: #cbd5e1;
+}
+
+.lock-error {
+  font-size: 0.82rem;
+  color: #f87171;
+  text-align: center;
+  min-height: 18px;
+  font-weight: 600;
+}
+
+.lock-submit-btn {
+  padding: 13px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 10px;
+  width: 100%;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+  gap: 10px;
+}
+
+.lock-submit-btn:hover {
+  background: linear-gradient(135deg, #0369a1, #075985);
+}
+
+.lock-hint {
+  font-size: 0.75rem;
+  color: #475569;
+  text-align: center;
+  margin-top: 6px;
+}
+
+.lock-hint code {
+  background: #0f172a;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #38bdf8;
+  font-size: 0.8rem;
+}
+
+/* Poster Inner Elements - ensure all above bg layer */
+.poster-header-bar,
+.poster-day-banner,
+.calendar-cards-row,
+.daily-insights-box,
+.prayer-time-section,
+.poster-footer,
+.poster-watermark-row {
+  position: relative;
+  z-index: 2;
 }
