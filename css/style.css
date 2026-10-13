@@ -324,25 +324,26 @@ body {
 
 /* Left Logo: MHS */
 .logo-box {
-  width: 165px;
+  width: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
 .logo-mhs-img {
-  width: 145px;
-  height: auto;
+  width: auto;
+  height: 76px;
+  max-width: 95px;
   object-fit: contain;
-  mix-blend-mode: multiply;
 }
 
 /* Right Logo: Darul Habeeb */
 .logo-dh-img {
-  width: 155px;
-  height: auto;
+  width: auto;
+  height: 76px;
+  max-width: 95px;
   object-fit: contain;
-  mix-blend-mode: multiply;
 }
 
 /* Center Calendar Title */
@@ -705,10 +706,10 @@ body {
 }
 
 .footer-mhs-logo {
-  width: 44px;
-  height: auto;
+  width: auto;
+  height: 42px;
+  max-width: 48px;
   object-fit: contain;
-  mix-blend-mode: multiply;
 }
 
 .footer-text-group {
